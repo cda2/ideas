@@ -1,4 +1,4 @@
-package com.example.ideas;
+package com.example.redis_key_expired_event_example;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

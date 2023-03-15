@@ -1,4 +1,4 @@
-package com.example.ideas.expired.domain;
+package com.example.redis_key_expired_event_example.expired.domain;
 
 import java.io.Serializable;
 

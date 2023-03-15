@@ -1,4 +1,4 @@
-package com.example.ideas.expired.config;
+package com.example.redis_key_expired_event_example.expired.config;
 
 import java.net.ServerSocket;
 

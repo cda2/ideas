@@ -2,21 +2,21 @@
 
 # Key Expire 이벤트 발생
 
-Redis 공식 문서[^1]에 따르면, Expire 이벤트를 수신하기 위해서는 최소한 다음과 같은 플래그 사용이 필요하다.
+Redis 공식 문서[^1] 에 따르면, Expire 이벤트를 수신하기 위해서는 최소한 다음과 같은 플래그 사용이 필요하다.
 
-- E (__keyevent@<db>__ 접두사로 발행된 Keyevent 이벤트.)
-- x (Key가 만료되었을 때 발생하는 이벤트.)
+-   E (**keyevent@** 접두사로 발행된 Keyevent 이벤트.)
+-   x (Key가 만료되었을 때 발생하는 이벤트.)
 
-Redis에서 설정을 사용하기 위해서는 `redis.conf` 파일을 수정하거나, `redis-cli`를 통해 설정을 변경할 수 있다.
+Redis에서 설정을 사용하기 위해서는 `redis.conf` 파일을 수정하거나, `redis-cli`를 통해 설정을 변경할 수 있다.  
 `redis.conf` 파일을 수정하는 경우, 다음과 같이 설정을 수정한다.
 
-```text
+```
 notify-keyspace-events "Ex"
 ```
 
 `redis-cli`를 통해 설정을 변경하는 경우, 다음과 같이 설정을 변경한다.
 
-```bash
+```shell
 redis-cli CONFIG SET notify-keyspace-events "Ex"
 ```
 
@@ -32,7 +32,7 @@ public class RedisConfig {
 }
 ```
 
-대체 `@EnableRedisRepositories` 어노테이션이 어떤 기능을 하는지 알아보자.
+대체 이 어노테이션이 `@EnableRedisRepositories` 어떤 기능을 하는지 알아보자.
 
 ## `@EnableRedisRepositories` 어노테이션의 작동 방식
 
@@ -335,13 +335,13 @@ private void initKeyExpirationListener(){
 
     // Expire 이벤트 리스너가 없는 경우
     if(this.expirationListener.get()==null) {
-    
+
         // 기본적인 Expire 이벤트를 처리하는 매핑 리스너 클래스를 생성한다.
         MappingExpirationListener listener=new MappingExpirationListener(this.messageListenerContainer,this.redisOps,
         this.converter);
         // Expire 설정 파라미터 값을 설정한다. (이전에 본 기본값인 "Ex" 또는 별도의 설정 값)
         listener.setKeyspaceNotificationsConfigParameter(keyspaceNotificationsConfigParameter);
-    
+
         // 애플리케이션 이벤트 발행자가 설정되어 있는 경우, 매핑 리스너에 설정한다.
         if(this.eventPublisher!=null){
         listener.setApplicationEventPublisher(this.eventPublisher);
@@ -417,31 +417,33 @@ private boolean keepShadowCopy(){
 
 위의 함수는 `ShadowCopy` 가 `ON` 이거나 (`DEFAULT` 이고 Expire 이벤트 리스너가 있는 경우) `true`, 그렇지 않으면 `false` 를 반환한다.
 
-- put: `keepShadowCopy` 가 `true` 인 경우, `:phantom` 접미사를 가진 키를 생성한다.
-- delete: `keepShadowCopy` 가 `true` 인 경우, `:phantom` 접미사를 가진 키를 삭제한다.
-- update: `keepShadowCopy` 가 `true` 인 경우, `TTL` 시간이 초과된 경우 `:phantom` 접미사를 가진 키를 삭제한다. `TTL` 시간이 초과되지 않은 경우, `:phantom` 접미사를 가진 키의 값과 `TTL` 시간을 업데이트한다.
+-   put: `keepShadowCopy` 가 `true` 인 경우, `:phantom` 접미사를 가진 키를 생성한다.
+-   delete: `keepShadowCopy` 가 `true` 인 경우, `:phantom` 접미사를 가진 키를 삭제한다.
+-   update: `keepShadowCopy` 가 `true` 인 경우, `TTL` 시간이 초과된 경우 `:phantom` 접미사를 가진 키를 삭제한다. `TTL` 시간이 초과되지 않은 경우, `:phantom` 접미사를 가진 키의 값과 `TTL` 시간을 업데이트한다.
 
-이 옵션이 켜져 있어야 `RedisKeyExpiredEvent` 를 `value` 값과 같이 사용할 수 있다. 하지만 문제점으로 `ShadowCopy` 가 켜져 있으면, `:phantom` 이라는 접미사를 가진 키가 생성되어 메모리 사용량이 증가한다. `RedisKeyExpiredEvent` 를 사용하지 않는다면, `ShadowCopy` 를 `OFF` 로 설정해야 메모리 사용량을 줄일 수 있다.[^3],[^4]
+이 옵션이 켜져 있어야 `RedisKeyExpiredEvent` 를 `value` 값과 같이 사용할 수 있다. 하지만 문제점으로 `ShadowCopy` 가 켜져 있으면, `:phantom` 이라는 접미사를 가진 키가 생성되어 메모리 사용량이 증가한다. `RedisKeyExpiredEvent` 를 사용하지 않는다면, `ShadowCopy` 를 `OFF` 로 설정해야 메모리 사용량을 줄일 수 있다.[^3], [^4]
 
 `ShadowCopy` 옵션을 사용 시 다음과 같이, `:phantom` 이라는 접미사를 가진 키가 생성되는 것을 확인할 수 있다. **`phantom` 키 값은 원본 키 값보다 5분 (300초) 더 유지된다.**
-![Redis Phantom](./img/redis_phantom.png)
+
+![Redis Phantom](https://github.com/cda2/blog/blob/master/img/redis_phantom.png?raw=true)
 
 ## 왜 `RedisKeyExpiredEvent` 이벤트를 사용하는가?
 
-여러가지 이유가 있겠지만, 가장 중요한 것은 **개발자의 고통을 크게 줄여줄 수 있기 때문이라고 생각한다**. 다른 문서나 개발 예시들을 보면 비교적 로우 레벨인 `redisTemplate` 를 사용하는 것을 쉽게 볼 수 있는데, redisTemplate를 사용하기 위해서는 다음과 같은 요구사항들과 과정을 거쳐야한다.
+여러가지 이유가 있겠지만, 가장 중요한 것은 **개발자의 고통을 크게 줄여줄 수 있기 때문이라고 생각한다**. 다른 문서나 개발 예시들을 보면 비교적 로우 레벨인 `redisTemplate` 를 사용하는 것을 쉽게 볼 수 있는데, `redisTemplate`를 사용하기 위해서는 다음과 같은 요구사항들과 과정을 거쳐야한다.
 
-- 모든 사소한 데이터의 CRUD 작업을 직접 구현해야 한다.
-- 모든 `TTL` 값을 직접 실행해야 한다.
-- `TTL` 값이 초과된 데이터를 직접 관리해야 한다. (이 때, `TTL` 값이 초과된 데이터를 찾기 위해서 반복적으로 조회하거나, 최소한의 모니터링이 필요하다.)
+-   모든 사소한 데이터의 CRUD 작업을 직접 구현해야 한다.
+-   모든 `TTL` 값을 직접 실행해야 한다.
+-   `TTL` 값이 초과된 데이터를 직접 관리해야 한다.
+    -   이 때, `TTL` 값이 초과된 데이터를 찾기 위해서 반복적으로 조회하거나, 최소한의 모니터링이 필요하다.
 
-이 부분 중 하나라도 실수가 나거나 누락되면, 데이터가 정상적으로 삭제되지 않고 남아있는 문제가 발생할 수 있다. 이러한 실수를 줄이거나 방지할 수는 있겠지만, 개발자가 실수를 하지 않는다는 것은 불가능하다.
+이 부분 중 하나라도 실수가 나거나 누락되면, 데이터가 정상적으로 삭제되지 않고 남아있는 문제가 발생할 수 있다. 이러한 실수를 줄이거나 방지할 수는 있겠지만, 개발자가 실수를 하지 않는다는 것은 불가능하다.  
 그래서 `RedisKeyExpiredEvent` 를 사용하면, 이러한 고통을 크게 줄일 수 있다.
 
 ## 어떻게 `RedisKeyExpiredEvent` 가 발행되는가?
 
 이를 이해하기 위해서는 `KeyExpirationEventMessageListener` 의 내부 구현을 살펴보면 된다.
 
-이에 앞서 다시 `RedisKeyExpiredEvent` 의 코드 일부분을 살펴보면 다음과 같다.
+이에 앞서 다시 `RedisKeyValueAdapter` 의 코드 일부분[^5]을 살펴보면 다음과 같다.
 
 ```java
 @Override
@@ -450,7 +452,9 @@ public void setApplicationContext(ApplicationContext applicationContext)throws B
 }
 ```
 
-`ApplicationContext` 를 받아서 `eventPublisher` 변수에 저장하는 것을 볼 수 있다. 이를 사용하여 `RedisKeyExpiredEvent` 를 발행한다.
+내내 돌고 돌아서, 결국엔 ApplicationContext에서 발행하는 이벤트를 사용하게 된다. 코드를 보면 `ApplicationContext` 를 받아서 `eventPublisher` 변수에 저장하는 것을 볼 수 있다. 이를 사용하여 `RedisKeyExpiredEvent` 를 발행한다. 직접적으로 발행하는 것은 아니고, `ApplicationContext` (정확히는 `ApplicationContext` 가 상속하고 있는 `ApplicationEventPublisher` 인터페이스) 를 각 이벤트 리스너들에게 넘겨주고, 각 리스너들이 트리거를 당기는 식으로 구현되어 있다.
+
+내부 동작들을 살펴보았으니, 이젠 Key Expire 메시지를 받아 처리하는 리스너를 들여다보자.
 
 ```java
 /*
@@ -535,8 +539,17 @@ public class KeyExpirationEventMessageListener extends KeyspaceEventMessageListe
         this.publisher = applicationEventPublisher;
     }
 }
+```
 
-```  
+코드를 보면 알 수 있듯이, 이전에 말한 다음 과정을 통해 이벤트가 발행된다.
+
+1.  `ApplicationEventPublisher` (실 객체는 `ApplicationContext` 구현체) 를 주입받는다.
+2.  Keyspace notification 메시지 (Key Expire) 를 전달받는다.
+3.  `RedisKeyValueAdapter` 내부에 있는 정적 클래스인 `MappingExpirationListener` 클래스에게 Key Expire 이벤트 처리를 위임한다.
+4.  `MappingExpirationListener` 클래스는 전달받은 메시지 객체를 내부에 있는 컨버터를 사용해서 변환하고, 레디스 관련 작업을 마무리한다.
+5.  `RedisKeyExpiredEvent` 이벤트 객체를 변환한 값을 통해 생성한다.
+6.  생성한 `RedisKeyExpiredEvent` 이벤트를 트리거한다.
+7.  `RedisKeyExpiredEvent` 이벤트 리스너들이 이를 처리한다.
 
 ## 어떻게 `RedisKeyExpiredEvent` 를 사용하는가?
 
@@ -623,17 +636,19 @@ static class MappingExpirationListener extends KeyExpirationEventMessageListener
 
 대략 다음과 같은 일들을 하고 있음을 알 수 있다.
 
-- Redis에서 `__keyevent@*__:expired` 메시지를 수신한다.
-- 메시지를 `RedisKeyExpiredEvent` 로 변환하고, 발행한다.
-- 불필요한 `PhantomKey` 를 삭제한다.
+-   Redis에서 `__keyevent@*__:expired` 메시지를 수신한다.
+-   메시지를 `RedisKeyExpiredEvent` 로 변환하고, 발행한다.
+-   불필요한 `PhantomKey` 를 삭제한다.
 
-이와 유사한 방식으로 `KeyExpirationEventMessageListener` 를 상속받아 구현하면 된다. 나는 매우 게으른 사람이기에 위 방법을 사용하지 않는다.
+이와 유사한 방식으로 `KeyExpirationEventMessageListener` 를 상속받아 구현한 후에, `RedisMessageListenerContainer` 를 주입받아서 사용하면 된다.[^6]
+
+나는 매우 게으른 사람이기에 위 방법을 사용하지 않는다.
 
 ### `RedisKeyExpiredEvent` 를 `@EventListener` 로 처리
 
 매우 간편하고 실용적인 방법이다.
 
-관련하여 본인이 직접 작성한 미천한 테스트 코드를 보자.[^5]
+관련하여 본인이 직접 작성한 미천한 테스트 코드를 보자.[^7] 
 
 #### Domain.java
 
@@ -756,7 +771,6 @@ public class RedisTemplateConfig {
         return redisTemplate;
     }
 }
-
 ```
 
 #### ExpiredListener.java
@@ -812,7 +826,6 @@ public class ExpiredListener {
         othersCount = 0;
     }
 }
-
 ```
 
 #### RedisExpiredTest.java
@@ -868,7 +881,7 @@ public class RedisExpiredTest {
         // given
         // 2초 후에 만료되는 도메인을 저장한다.
         domainRepository.save(domain);
-        
+
         // 저장된 도메인의 개수는 1개이다.
         assertThat(domainRepository.count()).isEqualTo(1);
         // 리스너의 도메인 카운트는 0이다. (아직 만료되지 않았기 때문)
@@ -894,40 +907,38 @@ public class RedisExpiredTest {
         // 2초 후에 만료되는 도메인과 3초 후에 만료되는 다른 도메인 객체를 설정한다.
         dumbRepository.save(dumb);
         domainRepository.save(domain);
-        
+
         // 저장된 도메인의 개수는 1개이다.
-        assertThat(dumbRepository.count()).isEqualTo(1);
-        // 저장된 다른 도메인의 개수는 1개이다.
         assertThat(domainRepository.count()).isEqualTo(1);
+        // 저장된 다른 도메인의 개수는 1개이다.
+        assertThat(dumbRepository.count()).isEqualTo(1);
         // 리스너의 도메인 카운트는 0이다. (아직 만료되지 않았기 때문)
         assertThat(expiredListener.getDomainCount()).isEqualTo(0);
         // 리스너의 기타 카운트는 0이다. (아직 만료되지 않았기 때문)
         assertThat(expiredListener.getOthersCount()).isEqualTo(0);
 
         // when
-        // 4초 후에 만료된 도메인을 조회한다.
+        // 4초 후에 만료된 도메인들을 조회한다.
         Thread.sleep(4000);
 
         // then
         // 도메인의 개수는 삭제되어 0개이다.
-        assertThat(dumbRepository.count()).isEqualTo(0);
-        // 다른 도메인의 개수도 삭제되어 0개이다.
         assertThat(domainRepository.count()).isEqualTo(0);
+        // 다른 도메인의 개수도 삭제되어 0개이다.
+        assertThat(dumbRepository.count()).isEqualTo(0);
         // 리스너의 도메인 Expire 카운트는 1이다.
         assertThat(expiredListener.getDomainCount()).isEqualTo(1);
         // 리스너의 기타 Expire 카운트는 1이다.
         assertThat(expiredListener.getOthersCount()).isEqualTo(1);
     }
 }
-
 ```
 
 테스트를 실행해보면 다음과 같은 결과를 얻을 수 있다.
 
-
 #### 도메인 단독 expire 테스트 (`domainExpiredTest`)
 
-```log
+```
 2023-03-14T18:30:58.395+09:00  INFO 173173 --- [enerContainer-1] c.e.i.expired.listener.ExpiredListener   : Domain event received: RedisKeyExpiredEvent [keyspace=com.example.ideas.expired.domain.Domain, id=1]
 2023-03-14T18:30:58.398+09:00  INFO 173173 --- [enerContainer-1] c.e.i.expired.listener.ExpiredListener   : Domain event source: [99, 111, 109, 46, 101, 120, 97, 109, 112, 108, 101, 46, 105, 100, 101, 97, 115, 46, 101, 120, 112, 105, 114, 101, 100, 46, 100, 111, 109, 97, 105, 110, 46, 68, 111, 109, 97, 105, 110, 58, 49]
 2023-03-14T18:30:58.398+09:00  INFO 173173 --- [enerContainer-1] c.e.i.expired.listener.ExpiredListener   : Domain event keyspace: com.example.ideas.expired.domain.Domain
@@ -940,7 +951,7 @@ public class RedisExpiredTest {
 
 #### 다른 도메인과 함께 expire 테스트 (`mixedTest`)
 
-```log
+```
 2023-03-14T18:31:01.391+09:00  INFO 173173 --- [enerContainer-2] c.e.i.expired.listener.ExpiredListener   : Domain event received: RedisKeyExpiredEvent [keyspace=com.example.ideas.expired.domain.Domain, id=1]
 2023-03-14T18:31:01.392+09:00  INFO 173173 --- [enerContainer-2] c.e.i.expired.listener.ExpiredListener   : Domain event source: [99, 111, 109, 46, 101, 120, 97, 109, 112, 108, 101, 46, 105, 100, 101, 97, 115, 46, 101, 120, 112, 105, 114, 101, 100, 46, 100, 111, 109, 97, 105, 110, 46, 68, 111, 109, 97, 105, 110, 58, 49]
 2023-03-14T18:31:01.392+09:00  INFO 173173 --- [enerContainer-2] c.e.i.expired.listener.ExpiredListener   : Domain event keyspace: com.example.ideas.expired.domain.Domain
@@ -959,28 +970,31 @@ public class RedisExpiredTest {
 2023-03-14T18:31:02.390+09:00  INFO 173173 --- [enerContainer-3] c.e.i.expired.listener.ExpiredListener   : Unknown event value: Dumb(id=1, value=42.0)
 ```
 
-`RedisKeyExpiredEvent<Domain>` 클래스로 파라미터를 명시했음에도 불구하고, `RedisKeyExpiredEvent<Dumb>` 이벤트도 받아서 처리함을 확인할 수 있다.
+`RedisKeyExpiredEvent<Domain>` 클래스로 파라미터를 명시했음에도 불구하고, `RedisKeyExpiredEvent<Dumb>` 이벤트도 받아서 처리함을 확인할 수 있다. 물론 RedisKeyExpiredEvent 를 상속해서 Predicate 등을 섞고, 이를 보완하는 이벤트 리스너를 만들 수는 있겠지만, 다른 사람이 보기에 이게 뭔가 싶을테니 굳이 그럴 필요가 있을까...싶은 생각이다.
 
 # 결론
-- `Spring Data Redis`를 사용하면 `Redis`의 `keyspace notification`을 이용하여 `expire` 이벤트를 받을 수 있다.
-- `Keyspace` 옵션 (`enableKeyspaceEvents`) 을 켠 경우, `Phantom` 키 값을 사용하여 `expire` 이벤트 발생 시 `key`, `value` 모두를 완전하게 이벤트 형식으로 받을 수 있다.
-  - 이 때, `Phantom` 키 값이 중복으로 사용되어 `redisTemplate` 사용 대비 메모리를 많이 소모한다.
-  - `Expire` 이벤트를 사용하지 않는다면, `Keyspace` 이벤트와 `Phantom` 키 값을 사용하지 않도록 설정하는 것이 메모리 최적화에 도움이 된다.
-  - `Keyspace` 옵션이 켜져 있는 경우, `shadowCopy` 옵션에 따라 두 가지로 분기된다.
-    - `shadowCopy` 값이 `DEFAULT` 또는 `ON` 일 경우 `Phantom` 키 값을 추가로 사용하여 만료된 도메인 객체를 받을 수 있다. 
-    - `shadowCopy` 값이 `OFF` 일 경우 `Phantom` 키 값을 사용하지 않고 만료된 키 값만 반환된다.
-  - `RedisKeyExpiredEvent`를 사용해서 `TTL`이 만료된 도메인 객체를 온전하게 받을 수 있다.
-    - `KeyExpirationEventMessageListener` 리스너 클래스를 상속, 구현하여 이벤트 컨테이너에 등록하여 이벤트를 수신할 수 있다.
-    - `@EventListener` 어노테이션과 `RedisKeyExpiredEvent` 클래스를 사용하여 이벤트를 수신할 수 있다.
-      - 단, `RedisKeyExpiredEvent` 이벤트를 수신하더라도 특정 도메인 객체만을 수신할 수 없으므로 `value` 값 등을 사용하여 추가적으로 검증하여야 한다.
-- `AWS ElasticCache`를 사용하는 경우, `CONFIG` 명령어를 사용할 수 없어 `notify-keyspace-events` 변경을 다른 방법으로 해야 한다.[^6],[^7]
+
+-   `Spring Data Redis`를 사용하면 `Redis`의 `keyspace notification`을 이용하여 `expire` 이벤트를 받을 수 있다.
+-   `Keyspace` 옵션 (`enableKeyspaceEvents`) 을 켠 경우, `Phantom` 키 값을 사용하여 `expire` 이벤트 발생 시 `key`, `value` 모두를 완전하게 이벤트 형식으로 받을 수 있다.
+    -   이 때, `Phantom` 키 값이 중복으로 사용되어 `redisTemplate` 사용 대비 메모리를 많이 소모한다.
+    -   `Expire` 이벤트를 사용하지 않는다면, `Keyspace` 이벤트와 `Phantom` 키 값을 사용하지 않도록 설정하는 것이 메모리 최적화에 도움이 된다.
+    -   `Keyspace` 옵션이 켜져 있는 경우, `shadowCopy` 옵션에 따라 두 가지로 분기된다.
+        -   `shadowCopy` 값이 `DEFAULT` 또는 `ON` 일 경우 `Phantom` 키 값을 추가로 사용하여 만료된 도메인 객체를 받을 수 있다.
+        -   `shadowCopy` 값이 `OFF` 일 경우 `Phantom` 키 값을 사용하지 않고 만료된 키 값만 반환된다.
+    -   `RedisKeyExpiredEvent`를 사용해서 `TTL`이 만료된 도메인 객체를 온전하게 받을 수 있다.
+        -   `KeyExpirationEventMessageListener` 리스너 클래스를 상속, 구현하여 이벤트 컨테이너에 등록하여 이벤트를 수신할 수 있다.
+        -   `@EventListener` 어노테이션과 `RedisKeyExpiredEvent` 클래스를 사용하여 이벤트를 수신할 수 있다.
+            -   단, `RedisKeyExpiredEvent` 이벤트를 수신하더라도 특정 도메인 객체만을 수신할 수 없으므로 `value` 값 등을 사용하여 추가적으로 검증하여야 한다.
+-   `AWS ElasticCache`를 사용하는 경우, `CONFIG` 명령어를 사용할 수 없어 `notify-keyspace-events` 변경을 다른 방법으로 해야 한다.[^8], [^9]
 
 # Reference
 
-[^1]: https://redis.io/docs/manual/keyspace-notifications/
-[^2]: https://github.com/spring-projects/spring-data-redis/blob/main/src/main/java/org/springframework/data/redis/repository/configuration/EnableRedisRepositories.java#L56
-[^3]: https://engineering.salesforce.com/lessons-learned-using-spring-data-redis-f3121f89bff9/
-[^4]: https://hyperconnect.github.io/2022/12/12/fix-increasing-memory-usage.html
-[^5]: https://github.com/cda2/ideas/tree/master/redis_key_expired_event_example
-[^6]: https://docs.spring.io/spring-data/data-redis/docs/current/reference/html/#redis.repositories.expirations
-[^7]: https://stackoverflow.com/questions/57046175/startup-error-using-spring-boot-starter-data-redis-on-aws-using-ssl
+[^1]: https://redis.io/docs/manual/keyspace-notifications
+[^2]: https://github.com/spring-projects/spring-data-redis/blob/main/src/main/java/org/springframework/data/redis/repository/configuration/EnableRedisRepositories.java#L56 
+[^3]: https://engineering.salesforce.com/lessons-learned-using-spring-data-redis-f3121f89bff9 
+[^4]: https://hyperconnect.github.io/2022/12/12/fix-increasing-memory-usage.html 
+[^5]: https://github.com/spring-projects/spring-data-redis/blob/81f896693fda91b563ec33f4fdead43e5ca4470d/src/main/java/org/springframework/data/redis/core/RedisKeyValueAdapter.java#L721 
+[^6]: https://github.com/spring-projects/spring-data-redis/blob/81f896693fda91b563ec33f4fdead43e5ca4470d/src/main/java/org/springframework/data/redis/listener/KeyExpirationEventMessageListener.java#L44 
+[^7]: https://github.com/cda2/ideas/tree/master/redis_key_expired_event_example
+[^8]: https://docs.spring.io/spring-data/data-redis/docs/current/reference/html/#redis.repositories.expirations 
+[^9]: https://stackoverflow.com/questions/57046175/startup-error-using-spring-boot-starter-data-redis-on-aws-using-ssl 

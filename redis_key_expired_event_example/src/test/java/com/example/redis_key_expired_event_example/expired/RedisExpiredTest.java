@@ -1,4 +1,4 @@
-package com.example.ideas.expired;
+package com.example.redis_key_expired_event_example.expired;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -7,13 +7,13 @@ import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.example.ideas.expired.config.EmbeddedRedisConfig;
-import com.example.ideas.expired.config.RedisConfig;
-import com.example.ideas.expired.domain.Domain;
-import com.example.ideas.expired.domain.Dumb;
-import com.example.ideas.expired.listener.ExpiredListener;
-import com.example.ideas.expired.repository.DomainRepository;
-import com.example.ideas.expired.repository.DumbRepository;
+import com.example.redis_key_expired_event_example.expired.config.EmbeddedRedisConfig;
+import com.example.redis_key_expired_event_example.expired.config.RedisConfig;
+import com.example.redis_key_expired_event_example.expired.domain.Domain;
+import com.example.redis_key_expired_event_example.expired.domain.Dumb;
+import com.example.redis_key_expired_event_example.expired.listener.ExpiredListener;
+import com.example.redis_key_expired_event_example.expired.repository.DomainRepository;
+import com.example.redis_key_expired_event_example.expired.repository.DumbRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -1,11 +1,11 @@
-package com.example.ideas.expired.listener;
+package com.example.redis_key_expired_event_example.expired.listener;
 
 
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisKeyExpiredEvent;
 import org.springframework.stereotype.Component;
 
-import com.example.ideas.expired.domain.Domain;
+import com.example.redis_key_expired_event_example.expired.domain.Domain;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
